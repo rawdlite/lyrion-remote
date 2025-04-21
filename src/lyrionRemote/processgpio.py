@@ -119,7 +119,7 @@ class ProcessGPIO():
             self.display.device.hide()
 
 def main():
-    with open(os.path.join(Path.home(),".config","niche-audio","config.toml"), mode="rb") as fp:
+    with open(os.path.join(Path.home(),".config","lyrion-remote","config.toml"), mode="rb") as fp:
         settings = tomllib.load(fp)
     dsp = Display(config=settings)
     dsp.green.pulse()

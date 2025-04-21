@@ -31,6 +31,7 @@ def main():
                 unshuffle    : unshuffle tracks
                 toggle_shuffle : toggle shuffle state
                 sleep  : set/add sleeptime <min> default 30min
+                unsleep: set sleep to 0
                 random : play random album
                 show   : show test string'''))
     parser.add_argument("-v", "--verbose", action='count', default=0,
@@ -39,6 +40,7 @@ def main():
     parser.add_argument("-p", "--player", dest="player", default=player_id)
     parser.add_argument("tracks", nargs="*", help='files or url')
     args = parser.parse_args()
+    player_id = args.player
     server = LMServer(host=server_id)
     server.update()
     my_player = LMPlayer(server.get_player(player_id))
@@ -49,6 +51,10 @@ def main():
 
     if args.cmd == 'info':
         print(my_player)
+    elif args.cmd == 'get_players':
+        for player in server.players:
+            print(player.name)
+        
     else:
         getattr(my_player, args.cmd)(args.tracks)
 

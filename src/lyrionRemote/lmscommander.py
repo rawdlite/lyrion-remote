@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- mode: python; coding: utf-8 -*-
 import logging
+import os
+from glob import glob
 from time import time
 from datetime import timedelta
 from json import dumps as to_json
@@ -97,9 +99,19 @@ class LMPlayer():
     def build_tracks(self, tracks):
         track_list = []
         for track in tracks:
-            track_uri = self.parse_track(track)
-            self.vprint(track_uri)
-            track_list.append(track_uri)
+            if os.path.isdir(track):
+                pdir = os.path.join(track, "*.mp3")
+                print(f"{track} is dir {pdir}")
+                for file in glob(pdir):
+                    # [os.path.join(args.folder,f) for f in os.listdir(args.folder) if re.match('.*\.(mp3|flac)', f)]
+                    track_uri = self.parse_track(file)
+                    self.vprint(f" found: {track_uri}")
+                    track_list.append(track_uri)
+            else:
+                print(f"{track} is file")
+                track_uri = self.parse_track(track)
+                self.vprint(track_uri)
+                track_list.append(track_uri)
         return track_list     
     
     def status(self,*args):
@@ -179,4 +191,8 @@ class LMPlayer():
     def unsleep(self, *args):
         self.player.query('sleep', 0)
         
-                
+    def stop(self, *args):
+        self.player.turn_off()
+
+    def turn_on(self, *args):
+        self.player.turn_on()                

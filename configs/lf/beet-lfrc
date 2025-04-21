@@ -1,0 +1,136 @@
+map b # organise music with beets
+#map ba !beet edit -a --all $PWD
+map bd !beet remove -d "$f"
+#map bn !beet modify album=no-album $f
+map bt !eyeD3 -P yaml "$f" | bat -p
+map bm manage_tags
+map bu !beet update $PWD
+map bi !beet info "$f" | bat -p
+map bj !beet info -a "$f"
+map be !/data/music/music_var/bin/beet-edit "$f"
+map bs push :import_singleton
+map ba push :import_album
+map bo push :set_subgroup
+
+cmd list_artist ${{
+        RES_JSON=$(eyeD3 -P json "$f")
+        ARTIST=$(echo $RES_JSON | jq '.artist')
+        ARTIST="${ARTIST//\"/}"
+        beet list artist:$ARTIST | bat -p
+        read -n1 -p "continue..."
+}}
+
+cmd manage_tags ${{
+        echo "$f"
+        RES_JSON=$(eyeD3 -P json "$f")
+        GENRE=$(echo $RES_JSON | jq '.genre')
+        GENRE="${GENRE//\"/}"
+        TITLE=$(echo $RES_JSON | jq '.title')
+        TITLE="${TITLE//\"/}"
+        ALBUM=$(echo $RES_JSON | jq '.album')
+        ALBUM="${ALBUM//\"/}"
+        ARTIST=$(echo $RES_JSON | jq '.artist')
+        ARTIST="${ARTIST//\"/}"
+        read -p "title: $TITLE > " ans
+        if [[ $ans ]]
+        then
+           TITLE=$ans
+        fi
+        read -p "album: $ALBUM > " ans
+        if [[ $ans ]]
+        then
+           ALBUM=$ans
+        fi
+        read -p "artist: $ARTIST > " ans
+        if [[ $ans ]]
+        then
+           ARTIST=$ans
+        fi
+        read -p "genre: $GENRE > " ans
+        if [[ $ans ]]
+        then
+           GENRE=$ans
+        fi
+        #echo "eyeD3 --to-v2.4  --non-std-genres -a '$ARTIST' -A '$ALBUM' -t '$TITLE' -G 'GENRE' $f"
+        eyeD3 --to-v2.4  --non-std-genres -a "$ARTIST" -A "$ALBUM" -t "$TITLE" -G "GENRE" "$f"
+        eyeD3 -P yaml "$f" | bat
+        read -n1 -p "continue.."
+}}
+
+cmd import_singleton ${{
+        #GROUPING=$1
+        read -p "grouping:$GROUPING " ans
+        #if [[ $ans ]]
+        #then
+           GROUPING=$ans
+        #else
+        #   exit(1)
+        #fi
+        beet import -As "$f" --set grouping=$GROUPING &
+        read -n1 -p "continue..."
+}}
+
+cmd import_album ${{
+        #ALBUM_GROUPING=$1
+        read -p "album_grouping $ALBUM_GROUPING:" ans
+        #if [[ $ans ]]
+        #then
+        #   if [[ $ans =~ ^(quit|q) ]]
+        #   then
+        #      exit(0)
+        #   fi
+           ALBUM_GROUPING=$ans
+        #fi
+        beet import -A "$f" --set album_grouping=$ALBUM_GROUPING
+        read -n1 -p "continue..."
+}}
+
+cmd set_subgroup ${{
+        SUBGROUP=$1
+        read -p "Subggroup: $SUBGROUP " ans
+        #beet modify subgroup=$ans $1
+        echo $SUBGROUP
+        read -n1 -p "continue.."
+}}
+
+map Ba album_import
+map BA !beet-music edit -a $f #!echo "$fx" | xargs beet-music edit -a
+map Bs single_import
+map BS !beet-music edit $f
+map Bf list_artist
+map Bn !echo "$fx" | xargs -n 1 beet-music modify -a -y style=no-album
+
+cmd album_import ${{
+        read -p "album_grouping? " AGROUP
+        read -p "subgroup? " SGROUP
+        read -n 1 -p "Compilation? [y|N]" ans
+        read -n 1 -p "No Album? [y|N]" noalbum
+        CMD="echo \"$fx\" | xargs -n 1 beet-music import -A --set album_grouping=\"$AGROUP\""
+        if [[ $AGROUP ]]
+        then
+          [[ -n $SGROUP ]] && CMD="$CMD --set subgroup=\"$SGROUP\""
+          [[ $ans = y ]] && CMD="$CMD --set comp=true"
+          [[ $noalbum = y ]] && CMD="$CMD --set style=no-album"
+          eval $CMD
+        else
+          echo "$fx" | xargs -n1  -I % printf "% \n\n"
+        fi
+        read -n1 -p "continue..."
+}}
+
+cmd single_import ${{
+        read -p "grouping? " GROUP
+        read -p "subgroup? " SGROUP
+        if [[ $GROUP ]]
+        then
+          if [[ $SGROUP ]]
+          then
+            beet-music import -As --set grouping=$GROUP --set subgroup=$SGROUP "$f"
+          else
+            beet-music import -As --set grouping=$GROUP "$f"
+          fi
+        else
+          echo "$fx"
+        fi
+        read -n1 -p "continue..."
+}}
