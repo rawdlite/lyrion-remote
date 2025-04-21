@@ -24,7 +24,14 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ['lms']
+dependencies = [
+  'lms',
+  'gpiozero',
+  'pigpio',
+  'pigpio-encoder',
+  'luma.core',
+  'luma.oled'
+]
 
 [project.urls]
 Documentation = "https://github.com/rawdlite/lyrion-remote#readme"
