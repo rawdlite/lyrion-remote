@@ -1,0 +1,7 @@
+text/*; bat --style snip -p %s; edit=vim90 %s
+application/x-sh;bat -p %s; edit=vim %s; 
+audio/mpeg; eyeD3 %s; edit=beet edit %s; print=lms-play.py -v %s;
+audio/flac; metaflac --list --block-number=2 %s; edit=beet edit %s; print=lms-play.py -p $PLAYER %s;
+audio/mpegurl; bat %s; edit=vim %s; print=lmsplay.py %s;
+application/*; file --mime-type -b %s; 
+*/*; file --mime-type -b %s; 
