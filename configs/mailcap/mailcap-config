@@ -1,7 +1,8 @@
-text/*; bat --style snip -p %s; edit=vim90 %s
-application/x-sh;bat -p %s; edit=vim %s; 
+#copy to ~/.mailcap
+text/*; bat --style snip -p %s; edit=$EDITOR %s
+application/x-sh;bat -p %s; edit=$EDITOR %s; 
 audio/mpeg; eyeD3 %s; edit=beet edit %s; print=lms-play.py -v %s;
-audio/flac; metaflac --list --block-number=2 %s; edit=beet edit %s; print=lms-play.py -p $PLAYER %s;
-audio/mpegurl; bat %s; edit=vim %s; print=lmsplay.py %s;
+audio/flac; metaflac --list --block-number=2 %s; edit=beet edit %s; print=lmscommander play %s;
+audio/mpegurl; bat %s; edit=$EDITOR %s; print=lmscommander play %s;
 application/*; file --mime-type -b %s; 
 */*; file --mime-type -b %s; 

@@ -1,0 +1,5 @@
+set previewer pistol
+map E !lf-run.sh -e $f
+cmap <right> :cmd-enter; edit¬
+cmd edit !lf-run.sh -a $f
+map x !lf-run $f

@@ -147,7 +147,7 @@ class LMPlayer():
     def insert(self, tracks):
         track_list = self.build_tracks(tracks)
         self.show('insert',track_list)
-        player.query('playlist', 'insert', track_list)
+        self.player.query('playlist', 'insert', track_list)
 
     def next(self, *args):
         self.show('next','')

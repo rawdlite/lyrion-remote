@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
-PROG=$0
+action=view
+while getopts edp flag
+do
+    case "${flag}" in
+        e) action=edit;;
+        p) action=print;;
+        d) debug=1;;
+    esac
+done
+# Now handle positional arguments
+shift $((OPTIND - 1))
 FILE=$1
+
 if [[ -L $FILE ]]; then
         FILE=$(readlink $FILE)
         echo $FILE
 fi
-if [[ ${0##*/} == "l-mime-edit" ]]; then
-	run-mailcap --action=edit $FILE
-elif [[ ${0##*/} == "l-mime-run" ]]; then
-	run-mailcap --action=print $FILE
+
+if [[ $debug ]]; then
+	run-mailcap --action=$action --debug --norun $FILE
 else
-	run-mailcap --debug $FILE
-fi	
+  run-mailcap --action=$action $FILE
+fi
