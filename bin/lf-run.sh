@@ -2,12 +2,14 @@
 action=open
 cmd=""
 debug=false
+ask=false
 set -o noclobber -o noglob -o nounset -o pipefail
 IFS=$'\n'
-while getopts eda flag
+while getopts edav flag
 do
     case "${flag}" in
         e) action=edit;;
+        v) action=viewer;;
         a) ask=true;;
         d) debug=true;;
     esac
@@ -20,6 +22,15 @@ FILE_EXTENSION="${FILE_PATH##*.}"
 FILE_EXTENSION_LOWER="$(printf "%s" "${FILE_EXTENSION}" | tr '[:upper:]' '[:lower:]')"
 MIMETYPE="$( file --dereference --brief --mime-type -- "${FILE_PATH}" )"
 
+view_mime() {
+    local mimetype="${1}"
+    case "$mimetype" in
+        text/plain|application/x-sh|audio/mpegurl)
+            cmd="$PAGER ${FILE_PATH}";;
+        audio/mpeg|audio/flac)
+            cmd="eyeD3 -v $FILE_PATH | fold -s | $PAGER";;
+    esac        
+}
 
 open_mime() {
     local mimetype="${1}"
@@ -45,8 +56,11 @@ edit_mime() {
             cmd="beet edit $FILE_PATH";;
     esac        
 }
+
 if [[ $action == open ]]; then
     open_mime "${MIMETYPE}"
+elif [[ $action == viewer ]]; then
+    view_mime "${MIMETYPE}"
 elif [[ $action == edit ]]; then
     edit_mime "${MIMETYPE}"
 fi
