@@ -2,6 +2,7 @@
 import os
 import tomllib
 import subprocess
+import logging
 from time import sleep
 from pathlib import Path
 from gpiozero import Button, PWMLED, Device,ButtonBoard
@@ -13,7 +14,9 @@ from luma.core.render import canvas
 from luma.oled.device import sh1106, ssd1306
 from PIL import ImageFont, ImageDraw, Image
 from urls.LMSURL import URL, Saraswati
-from lyrionRemote.lmscommander import LMServer,LMPlayer
+from lyrionRemote.lmscommander import LMServer,LMPlayer,PlayerCommands
+
+logger = logging.getLogger(__name__)
 Device.pin_factory = PiGPIOFactory()
 
 class RotaryEncoder():
@@ -98,29 +101,50 @@ class ProcessGPIO():
 
     def button_action(self, button):
         self.green.on()
+        self.red.off()
         cmd = self.actions[[k for k,v in button.value._asdict().items() if v == 1][0]]
         print(f"cmd: {cmd}")
         self.display.device.show()
-        self.display.draw_text('action')
-        #getattr(self.player, cmd)()
-        try:
-            res = subprocess.run(cmd, shell=True, check=True)
-            print(res)
-        except subprocess.CalledProcessError as err:
-            self.red.on()
-            print(f"{cmd} failed {err}")
-            pass
-        except Exception as err:
-            self.red.pulse()
-            print(f"Unexpected {err=}, {type(err)=}")
-            pass
-        finally:
-            self.green.off()
-            self.display.device.hide()
+        action = cmd.replace('lmscommander ','')[0:10]
+        self.display.draw_text(action)
+        #ToDo: check if action is in allowed commands (solves virtual env prob)
+        #getattr(self.player, cmd)(a
+        if cmd in PlayerCommands:
+            getattr(self.player, cmd)()
+        else:    
+            try:
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=False)
+                logger.debug(res.stdout)       
+            except subprocess.CalledProcessError as err:
+                self.red.on()
+                logger.error(f"{cmd} failed {err}")
+                print(f"{cmd} failed {err}")
+                pass
+            except Exception as err:
+                self.red.pulse()
+                logger.error(f"{cmd} failed Unexpected error {err}")
+                pass
+            if res.returncode != 0:
+                self.red.pulse()
+                logger.error(f"{res.stderr.strip()} returncode:{res.returncode}")
+            elif len(res.stderr):
+                logger.warning(res.stderr)    
+        self.green.off()
+        self.display.device.hide()
 
 def main():
     with open(os.path.join(Path.home(),".config","lyrion-remote","config.toml"), mode="rb") as fp:
         settings = tomllib.load(fp)
+    logelevel = logging.INFO
+    debug = settings.get('general',{}).get('debug')
+    if debug:
+        loglevel = logging.DEBUG
+    
+    logging.basicConfig(filename='/var/log/gpio-process.log',
+                        format='%(asctime)s %(levelname)s:%(message)s',
+                        level=loglevel)
+    logger.info('started')
+    logger.debug(f"path: {os.environ['PATH']}")
     dsp = Display(config=settings)
     dsp.green.pulse()
     server = LMServer(settings.get('general',{}).get('server'))                       

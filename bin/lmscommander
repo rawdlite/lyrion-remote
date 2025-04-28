@@ -4,51 +4,48 @@ import logging
 import tomllib
 import argparse, textwrap
 import os
-from lyrionRemote.lmscommander import LMServer,LMPlayer
+from lyrionRemote.lmscommander import LMServer,LMPlayer,PlayerCommands
 from pathlib import Path
 from argparse import ArgumentParser
-
+logger = logging.getLogger(__name__)
       
                 
 def main():
+    LOGLEVEL = {
+        0: logging.WARNING,
+        1: logging.INFO,
+        2: logging.DEBUG
+    }
+    cmdhelpstr = "\n".join([f"{key}: {PlayerCommands[key]}" for key in PlayerCommands.keys()])
     with open(os.path.join(Path.home(),".config","lyrion-remote","config.toml"), mode="rb") as fp:
         settings = tomllib.load(fp)
     server_id = settings.get('general',{}).get('server')
     player_id = settings['general']['player']
+    debug = settings.get('general',{}).get('debug')
     parser = ArgumentParser(description="Interact with Logitech Media Server",
         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('cmd', help=textwrap.dedent('''\
-                status : show players and their status
-                info   : show player info
-                play   : without argument start player
-                play <tracks> : play files or urls
-                add <tracks>  : add files to end of playlist
-                insert <tracks>: play files next
-                pause  : pause the player
-                prev   : previous track
-                next   : next track
-                shuffle: shuffle tracks
-                unshuffle    : unshuffle tracks
-                toggle_shuffle : toggle shuffle state
-                sleep  : set/add sleeptime <min> default 30min
-                unsleep: set sleep to 0
-                random : play random album
-                show   : show test string'''))
+    parser.add_argument('cmd', help=cmdhelpstr)
     parser.add_argument("-v", "--verbose", action='count', default=0,
                     help="increase output verbosity")
     parser.add_argument("-s", "--server", dest="server", default=server_id)
     parser.add_argument("-p", "--player", dest="player", default=player_id)
     parser.add_argument("tracks", nargs="*", help='files or url')
     args = parser.parse_args()
+    if not LOGLEVEL.get(args.verbose):
+        print("invalid loglevel")
+        exit(1)
+    logging.basicConfig(format='%(asctime)s %(message)s',
+                        level=LOGLEVEL[args.verbose])
+    if debug or args.verbose == 2:
+        fh = logging.FileHandler('/var/log/lmscommand.log')
+        fh.setLevel(logging.DEBUG)
+        logger.addHandler(fh)
+    
     player_id = args.player
     server = LMServer(host=server_id)
     server.update()
     my_player = LMPlayer(server.get_player(player_id))
-    if args.verbose:
-        print(my_player)
-        print(args.cmd)
-        print(args.tracks)
-
+    logger.info(f"player: {my_player}\nargs: {args.cmd}\n tracks: {args.tracks}")
     if args.cmd == 'info':
         print(my_player)
     elif args.cmd == 'get_players':
@@ -57,6 +54,7 @@ def main():
         
     else:
         getattr(my_player, args.cmd)(args.tracks)
+    exit(0)
 
 if __name__ == '__main__':
    main()
