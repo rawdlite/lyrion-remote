@@ -62,6 +62,7 @@ class LMServer(Server):
 class LMPlayer():
     def __init__(self, player, verbose=False):
         self.player = player
+        print(player)
         self.server = player._server
         self.verbose = verbose
         self.PATH_ON_HOST = "/data/music/music_data"

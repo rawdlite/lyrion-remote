@@ -43,7 +43,11 @@ def main():
     player_id = args.player
     server = LMServer(host=server_id)
     server.update()
-    my_player = LMPlayer(server.get_player(player_id))
+    player = server.get_player(player_id)
+    if player:
+        my_player = LMPlayer(server.get_player(player_id))
+    else:
+        my_player = "no player found"
     if args.verbose:
         print(my_player)
         print(args.cmd)
