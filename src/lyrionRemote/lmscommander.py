@@ -10,8 +10,28 @@ from sys import stderr
 from collections import OrderedDict
 from lms import Server, __version__
 from re import match
-
+logger = logging.getLogger(__name__)
 TIMEOUT = timedelta(seconds=5)
+
+
+PlayerCommands = {
+    'play': 'without argument start player',
+    'play <tracks>': 'play dir,files or urls',
+    'add': 'add files to end of playlist',
+    'status': 'show players and their status',                   
+    'info': 'show player info',                                
+    'insert': '<tracks> play files next',                         
+    'pause': 'pause the player',                                
+    'prev': 'previous track',                                  
+    'next': 'next track',                                      
+    'shuffle': 'shuffle tracks',                                  
+    'unshuffle': 'unshuffle tracks',                          
+    'toggle_shuffle': 'toggle shuffle state',                    
+    'sleep': 'set/add sleeptime <min> default 30min',           
+    'unsleep': 'set sleep to 0',                                  
+    'random': 'play random album',                               
+    'show': 'show test string' 
+}
 
 class LMServer(Server):
     def __init__(self,host=None, port=9000, username=None, password=None):
@@ -67,6 +87,11 @@ class LMPlayer():
         self.verbose = verbose
         self.PATH_ON_HOST = "/data/music/music_data"
         self.PATH_IN_DOCKER = "/music"
+        self.PLAYER_COMMANDS = {
+            'play': 'without argument start player',
+            'play <tracks>': 'play dir,files or urls',
+            'add': 'add files to end of playlist'
+        }
 
     def __str__(self):
         if self.player.is_playing:
@@ -82,36 +107,32 @@ class LMPlayer():
                 f"\n{self.player.position_pct}: {self.player.position} / {self.player.duration}"
                 f"\nstatus: {status}")
 
-    def vprint(self,text):
-        if self.verbose:
-            print(text)
-        
 
     def parse_track(self, track):
         if track.startswith(self.PATH_ON_HOST):
-            self.vprint('is file')
+            logger.debug(f'{track} is file')
             return  f"file://{track.replace(self.PATH_ON_HOST,self.PATH_IN_DOCKER)}"
         elif track.startswith('http'):
-            self.vprint('is_url')
+            logger.debug(f'{track} is_url')
             return track
         else:
-            print(f"whats going on with {track}?")
+            logger.warn(f"whats going on with {track}?")
 
     def build_tracks(self, tracks):
         track_list = []
         for track in tracks:
             if os.path.isdir(track):
                 pdir = os.path.join(track, "*.mp3")
-                print(f"{track} is dir {pdir}")
+                logger.debug(f"{track} is dir {pdir}")
                 for file in glob(pdir):
                     # [os.path.join(args.folder,f) for f in os.listdir(args.folder) if re.match('.*\.(mp3|flac)', f)]
                     track_uri = self.parse_track(file)
-                    self.vprint(f" found: {track_uri}")
+                    logger.debug(f" found: {track_uri}")
                     track_list.append(track_uri)
             else:
-                print(f"{track} is file")
+                logger.debug(f"{track} is file")
                 track_uri = self.parse_track(track)
-                self.vprint(track_uri)
+                logger.debug(track_uri)
                 track_list.append(track_uri)
         return track_list     
     
@@ -131,7 +152,7 @@ class LMPlayer():
         
         if tracks:
             track_list = self.build_tracks(tracks)
-            self.vprint(track_list)
+            logger.debug(track_list)
             if len(tracks) > 1:
                 self.player.enqueue_uri(track_list)
                 self.player.play()
