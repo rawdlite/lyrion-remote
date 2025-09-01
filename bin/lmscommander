@@ -37,7 +37,8 @@ def main():
     logging.basicConfig(format='%(asctime)s %(message)s',
                         level=LOGLEVEL[args.verbose])
     if debug or args.verbose == 2:
-        fh = logging.FileHandler('/var/log/lmscommand.log')
+        # ToDo: make dir configurable
+        fh = logging.FileHandler('/tmp/lmscommand.log')
         fh.setLevel(logging.DEBUG)
         logger.addHandler(fh)
     

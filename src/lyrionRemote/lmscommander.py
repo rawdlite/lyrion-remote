@@ -8,7 +8,7 @@ from datetime import timedelta
 from json import dumps as to_json
 from sys import stderr
 from collections import OrderedDict
-from lms import Server, __version__
+from lyrionRemote.lms import Server, __version__
 from re import match
 logger = logging.getLogger(__name__)
 TIMEOUT = timedelta(seconds=5)
