@@ -30,7 +30,9 @@ PlayerCommands = {
     'sleep': 'set/add sleeptime <min> default 30min',           
     'unsleep': 'set sleep to 0',                                  
     'random': 'play random album',                               
-    'show': 'show test string' 
+    'show': 'show test string',
+    'turn_on': "turn player on",
+    'turn_off': "turn player off" 
 }
 
 class LMServer(Server):
@@ -122,13 +124,13 @@ class LMPlayer():
         track_list = []
         for track in tracks:
             if os.path.isdir(track):
-                pdir = os.path.join(track, "*.mp3")
-                logger.debug(f"{track} is dir {pdir}")
-                for file in glob(pdir):
-                    # [os.path.join(args.folder,f) for f in os.listdir(args.folder) if re.match('.*\.(mp3|flac)', f)]
-                    track_uri = self.parse_track(file)
-                    logger.debug(f" found: {track_uri}")
-                    track_list.append(track_uri)
+                logger.debug(f"{track} is dir ")
+                with os.scandir(track) as d:
+                    for e in d:
+                        if e.is_file() and e.name.endswith(('.mp3','.flac')):
+                            track_uri = self.parse_track(e.path)
+                            logger.debug(f" found: {track_uri}")
+                            track_list.append(track_uri)
             else:
                 logger.debug(f"{track} is file")
                 track_uri = self.parse_track(track)
@@ -149,11 +151,11 @@ class LMPlayer():
     def play(self, tracks):
         track_list = None
         self.show('play',tracks)
-        
         if tracks:
             track_list = self.build_tracks(tracks)
             logger.debug(track_list)
-            if len(tracks) > 1:
+            # FIXME: delete old playlist
+            if len(track_list) > 1:
                 self.player.enqueue_uri(track_list)
                 self.player.play()
             else:
@@ -170,6 +172,9 @@ class LMPlayer():
         track_list = self.build_tracks(tracks)
         self.show('insert',track_list)
         self.player.query('playlist', 'insert', track_list)
+
+    def clear_playlist(self):
+        self.player.query('playlist', 'clear')
 
     def next(self, *args):
         self.show('next','')
@@ -217,4 +222,7 @@ class LMPlayer():
         self.player.turn_off()
 
     def turn_on(self, *args):
-        self.player.turn_on()                
+        self.player.turn_on()
+        
+    def turn_off(self, *args):
+        self.player.turn_off()                

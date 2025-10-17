@@ -1,18 +1,13 @@
 # source ~/src/lyrion-remote/configs/lf/lms-lfrc
 map P # lms Player commands
-
-
-map Pa !lmscommander -v $lf_user_player add $fx
 map Pi !lmscommander -v $lf_user_player insert "$fx"
-map Pn $lmscommander -v $lf_user_player play $fx
-#map Pp !{{
-#       echo "opt: $lf_user_player"
-#        lms-play.py -v "$lf_user_player" -c play $fx
-#}}
-map Pp !echo "player: >$lf_user_player<i $fx";lmscommander -v $lf_user_player play "$fx"
+map Pa $lmscommander -v $lf_user_player add $fx
+map Pp !echo "player: >$lf_user_player< $fx";lmscommander -v $lf_user_player play "$fx"
 map Pw !echo "$lf_user_player"; lmscommander info
+map Px $lmscommander -v "$lf_user_player" play
+map PW $lmscommander status
 map PA $lmscommander -v "$lf_user_player" add $PWD
-map PI $lmscommander -v "$lf_user_player" insert $PWD insert
+map PI $lmscommander -v "$lf_user_player" insert $PWD
 map PP $lmscommander -v "$lf_user_player" play $PWD
 
 
