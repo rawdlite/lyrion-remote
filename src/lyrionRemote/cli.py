@@ -17,8 +17,19 @@ def main():
         2: logging.DEBUG
     }
     cmdhelpstr = "\n".join([f"{key}: {PlayerCommands[key]}" for key in PlayerCommands.keys()])
-    with open(os.path.join(Path.home(),".config","lyrion-remote","config.toml"), mode="rb") as fp:
-        settings = tomllib.load(fp)
+    lyrion_remote_config = Path(os.getenv("LYRION_REMOTE_CONFIG", "/config/lyrion-remote/config.toml"))
+    if not lyrion_remote_config.is_file():
+        lyrion_remote_config = Path.home() / ".config" / "lyrion-remote" / "config.toml"
+    try:
+        with open(lyrion_remote_config, mode="rb") as fp:
+            settings = tomllib.load(fp)
+            # print(f"Successfully loaded configuration from: {config_path}")
+        
+    except FileNotFoundError:
+        print(f"Error: Configuration file not found at '{config_path}'")
+        print("Please ensure the file exists or set the LYRION_REMOTE_CONFIG environment variable.")
+        sys.exit(1)
+        
     server_id = settings.get('general',{}).get('server')
     player_id = settings['general']['player']
     debug = settings.get('general',{}).get('debug')
@@ -45,11 +56,26 @@ def main():
     player_id = args.player
     server = LMServer(host=server_id)
     server.update()
-    player = server.get_player(player_id)
-    if player:
+    
+    if args.cmd == 'status':
+        if server.players:
+            server.status()
+        else:
+            print(" No players found on the server.")
+        exit(0) # Exit with an error code
+    player_data = server.get_player(player_id)
+    if player_data:
         my_player = LMPlayer(server.get_player(player_id))
     else:
-        my_player = "no player found"
+        # If not found, print available players and exit gracefully
+        print(f"Error: Player '{player_id}' not found.")
+        if server.players:
+            print("\nAvailable players:")
+            for p in server.players:
+                print(p.name)
+        else:
+            print(" No players found on the server.")
+        exit(1) # Exit with an error code
     if args.verbose:
         print(my_player)
         print(args.cmd)
@@ -61,7 +87,6 @@ def main():
     elif args.cmd == 'get_players':
         for player in server.players:
             print(player.name)
-        
     else:
         getattr(my_player, args.cmd)(args.tracks)
     exit(0)

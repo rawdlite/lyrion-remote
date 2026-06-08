@@ -5,7 +5,7 @@ tests
 .eggs/
 build/
 dist/
-
+config.toml
 # Virtual environment
 .venv/
 

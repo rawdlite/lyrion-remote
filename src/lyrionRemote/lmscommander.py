@@ -53,7 +53,6 @@ class LMServer(Server):
         return my_player
 
     def status(self,*args):
-        print('status called')
         for player in self.players:
             if player.is_playing:
                 status = 'playing'

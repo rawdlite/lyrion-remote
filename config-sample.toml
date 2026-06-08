@@ -1,0 +1,47 @@
+# settings lmscommander
+[general]
+player = "Schlafzimmer"
+server = "192.168.2.10"
+debug = "true"
+
+
+# optional setting processgpio
+[rotary]
+timeout = 120
+clk_pin = 21
+dt_pin = 20
+sw_pin = 16
+
+[button_config]
+lb1 = 26
+lb2 = 6
+lb3 = 5
+lb4 = 25
+ob1 = 24
+ob2 = 23
+ob3 = 22
+ob4 = 27
+ob5 = 17
+
+[button_actions]
+ob1 = 'uv run lmscommander pause'
+ob2 = 'uv run lmscommander next'
+ob3 = 'uv run lmscommander random'
+ob4 = 'uv run lmscommander sleep'
+ob5 = 'uv run lmscommander play http://opml.radiotime.com/Tune.ashx?id=s25111&formats=aac,ogg,mp3&partnerId=16&serial=a44d9baf7190744ec4fa880f24a9fdba'
+lb1 = 'uv run lmscommander toggle_shuffle'
+lb2 = 'uv run lmscommander prev'
+lb3 = '/root/bin/stop.sh'
+lb4 = '/root/bin/start.sh'
+
+
+
+[switch]
+switch1 = 4
+switch2 = 14
+switch3 = 15
+
+[led]
+led_green = 12
+led_red = 13
+#led_yellow = 19
