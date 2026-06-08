@@ -1,3 +1,14 @@
 README.md.wip
 tests
-**/__pycache__/
+# Python build and metadata artifacts
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc

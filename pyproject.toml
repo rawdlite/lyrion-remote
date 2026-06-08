@@ -1,14 +1,14 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "lyrionRemote"
-dynamic = ["version"]
+version = "0.1.0"  # Set your static version here directly
 description = ''
 readme = "README.md"
 requires-python = ">=3.8"
-license = "MIT"
+license = { text = "MIT" } # Standard PEP 621 format for simple licenses
 keywords = ['lyrion', 'lms', 'gpio', 'remote']
 authors = [
   { name = "rawdlite", email = "rawdlite@gmail.com" },
@@ -39,26 +39,23 @@ Documentation = "https://github.com/rawdlite/lyrion-remote#readme"
 Issues = "https://github.com/rawdlite/lyrion-remote/issues"
 Source = "https://github.com/rawdlite/lyrion-remote"
 
-[tool.hatch.version]
-path = "src/lyrionRemote/__about__.py"
+# Setuptools automatically discovers anything inside the src/ directory
+[tool.setuptools.packages.find]
+where = ["src"]
 
-[tool.hatch.envs.types]
-extra-dependencies = [
-  "mypy>=1.0.0",
-]
-[tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/lyrion_remote tests}"
+[project.scripts]
+lmscommander = "lyrionRemote.cli:main"
 
 [tool.coverage.run]
-source_pkgs = ["lyrion_remote", "tests"]
+source_pkgs = ["lyrionRemote", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/lyrion_remote/__about__.py",
+  "src/lyrionRemote/__about__.py",
 ]
 
 [tool.coverage.paths]
-lyrion_remote = ["src/lyrion_remote", "*/lyrion-remote/src/lyrion_remote"]
+lyrionRemote = ["src/lyrionRemote", "*/lyrion-remote/src/lyrionRemote"]
 tests = ["tests", "*/lyrion-remote/tests"]
 
 [tool.coverage.report]
@@ -67,3 +64,4 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
