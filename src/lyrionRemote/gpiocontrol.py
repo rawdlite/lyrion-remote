@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """GPIO controller for lyrion-remote hardware interface."""
-import threading
 import logging
 import sys
 from signal import pause
@@ -55,11 +54,6 @@ class GpioControler:
     def run(self):
         """Start all hardware event handlers and enter main event loop."""
         self.logger.info('Entering main loop')
-        
-        # Start the RFID reader in a separate thread
-        rfid_thread = threading.Thread(target=self.rfid_reader.run, daemon=True)
-        rfid_thread.start()
-        self.logger.debug('RFID reader thread started')
         
         self.button_board.bb.when_pressed = self.button_board.button_action
         
