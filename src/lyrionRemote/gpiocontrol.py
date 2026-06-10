@@ -7,8 +7,8 @@ from gpiozero import Device
 from gpiozero.pins.pigpio import PiGPIOFactory
 from lyrionRemote.config import load_config
 from lyrionRemote.lmscommander import LMServer, LMPlayer
-from lyrionRemote.display_manager import Display
-from lyrionRemote.rotary_encoder_manager import RotaryEncoderManager
+from lyrionRemote.display_manager import create_display
+from lyrionRemote.chooser_manager import create_chooser
 from lyrionRemote.rfid_manager import RFIDManager
 from lyrionRemote.button_manager import ButtonManager
 
@@ -31,7 +31,7 @@ class GpioControler:
         self.logger.info('Initialization started')
         
         # Initialize display
-        self.display = Display(config=settings)
+        self.display = create_display(settings)
         self.display.green.pulse()
         
         # Connect to LMS server
@@ -39,8 +39,9 @@ class GpioControler:
         self.server.update()
         self.player = LMPlayer(self.server.get_player(settings['general']['player']), verbose=True)
         
-        # Setup rotary encoder with config
-        self.rotary_encoder = RotaryEncoderManager(display=self.display, player=self.player, config=settings)
+        # Setup chooser input hardware
+        self.chooser = create_chooser(settings, self.display, self.player)
+        self.chooser.setup()
         
         # Initialize RFID reader
         status_led = self.display.green
@@ -54,20 +55,7 @@ class GpioControler:
     def run(self):
         """Start all hardware event handlers and enter main event loop."""
         self.logger.info('Entering main loop')
-        
         self.button_board.bb.when_pressed = self.button_board.button_action
-        
-        self.rotary_encoder.rotary.setup_rotary(min=-1,
-                                                 max=len(self.rotary_encoder.choices),
-                                                 scale=1,
-                                                 up_callback=self.rotary_encoder.up_callback,
-                                                 down_callback=self.rotary_encoder.down_callback)
-        
-        self.rotary_encoder.rotary.setup_switch(debounce=200,
-                                                 long_press=True,
-                                                 sw_short_callback=self.rotary_encoder.sw_short,
-                                                 sw_long_callback=self.rotary_encoder.sw_long)
-        
         pause()
 
 def main():

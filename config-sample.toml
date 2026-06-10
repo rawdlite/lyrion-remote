@@ -13,6 +13,7 @@ log_dir = "/tmp"
 
 # optional setting processgpio
 [rotary]
+enabled = false
 timeout = 120
 clk_pin = 21
 dt_pin = 20
@@ -51,3 +52,20 @@ switch3 = 15
 led_green = 12
 led_red = 13
 #led_yellow = 19
+
+[display]
+type = 'lcd'
+
+[chooser]
+type = 'button'
+
+# For rotary chooser, either use chooser.rotary or the legacy top-level [rotary] section.
+# [chooser.rotary]
+# clk_pin = 21
+# dt_pin = 20
+# sw_pin = 16
+
+[chooser.button]
+button_fwd = 21
+button_bwd = 26
+button_sel = 19
