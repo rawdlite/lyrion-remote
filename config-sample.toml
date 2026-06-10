@@ -3,7 +3,13 @@
 player = "Schlafzimmer"
 server = "192.168.2.10"
 debug = "true"
+log_dir = "/tmp"
 
+# optional URL and command collections for play_choice can be stored separately in urls.conf
+# default path: ~/.config/lyrion-remote/urls.conf
+# override with LYRION_REMOTE_URLS_CONFIG
+
+# example urls.conf contents are provided in urls.conf.sample
 
 # optional setting processgpio
 [rotary]

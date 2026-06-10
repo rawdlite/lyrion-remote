@@ -4,12 +4,13 @@ import logging
 import tomllib
 import argparse, textwrap
 import os
+import sys
 from lyrionRemote.lmscommander import LMServer,LMPlayer,PlayerCommands
 from pathlib import Path
 from argparse import ArgumentParser
 logger = logging.getLogger(__name__)
-debug = True      
-                
+debug = True
+
 def main():
     LOGLEVEL = {
         0: logging.WARNING,
@@ -23,16 +24,17 @@ def main():
     try:
         with open(lyrion_remote_config, mode="rb") as fp:
             settings = tomllib.load(fp)
-            # print(f"Successfully loaded configuration from: {config_path}")
-        
     except FileNotFoundError:
-        print(f"Error: Configuration file not found at '{config_path}'")
+        print(f"Error: Configuration file not found at '{lyrion_remote_config}'")
         print("Please ensure the file exists or set the LYRION_REMOTE_CONFIG environment variable.")
         sys.exit(1)
-        
-    server_id = settings.get('general',{}).get('server')
-    player_id = settings['general']['player']
-    debug = settings.get('general',{}).get('debug')
+
+    server_id = settings.get('general', {}).get('server')
+    player_id = settings.get('general', {}).get('player')
+    debug_setting = settings.get('general', {}).get('debug')
+    log_dir = settings.get('general', {}).get('log_dir')
+    debug = str(debug_setting).lower() in ('1', 'true', 'yes', 'on')
+
     parser = ArgumentParser(description="Interact with Logitech Media Server",
         formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('cmd', help=cmdhelpstr)
@@ -40,6 +42,8 @@ def main():
                     help="increase output verbosity")
     parser.add_argument("-s", "--server", dest="server", default=server_id)
     parser.add_argument("-p", "--player", dest="player", default=player_id)
+    parser.add_argument("--log-dir", dest="log_dir", default=log_dir,
+                    help="directory for debug log file")
     parser.add_argument("tracks", nargs="*", help='files or url')
     args = parser.parse_args()
     if not LOGLEVEL.get(args.verbose):
@@ -48,10 +52,15 @@ def main():
     logging.basicConfig(format='%(asctime)s %(message)s',
                         level=LOGLEVEL[args.verbose])
     if debug or args.verbose == 2:
-        # ToDo: make dir configurable
-        fh = logging.FileHandler('/tmp/lmscommand.log')
-        fh.setLevel(logging.DEBUG)
-        logger.addHandler(fh)
+        log_dir_path = Path(args.log_dir) if args.log_dir else Path('/tmp')
+        try:
+            log_dir_path.mkdir(parents=True, exist_ok=True)
+            log_file = log_dir_path / 'lmscommand.log'
+            fh = logging.FileHandler(log_file)
+            fh.setLevel(logging.DEBUG)
+            logger.addHandler(fh)
+        except OSError as exc:
+            print(f"Warning: Could not write log file to '{log_dir_path}': {exc}", file=sys.stderr)
     
     player_id = args.player
     server = LMServer(host=server_id)

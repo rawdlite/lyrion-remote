@@ -152,8 +152,11 @@ class LMPlayer():
 
     def play(self, tracks):
         track_list = None
-        self.show('play',tracks)
+        self.show('play', tracks)
         if tracks:
+            if len(tracks) == 1 and isinstance(tracks[0], list):
+                self.player.query(*tracks[0])
+                return
             track_list = self.build_tracks(tracks)
             logger.debug(track_list)
             # FIXME: delete old playlist
@@ -168,15 +171,16 @@ class LMPlayer():
     def play_choice(self, tracks):
         choice = tracks[0]
         if choice in URL.keys():
-            print("found track")
             url = self.sara.get_url(choice)
-            print(url)
-            self.play([url])
+            if isinstance(url, list):
+                self.player.query(*url)
+            else:
+                self.play([url])
         else:
             self.choice()
             
     def choice(self, tracks):
-        choices = "\n".join([f"- {key}" for key in URL.keys()])
+        choices = "\n".join([f"{key}" for key in URL.keys()])
         print(choices)
     
 
