@@ -8,6 +8,7 @@ from datetime import timedelta
 from json import dumps as to_json
 from sys import stderr
 from collections import OrderedDict
+from lyrionRemote.urls.LMSURL import URL, Saraswati
 from lyrionRemote.lms import Server, __version__
 from re import match
 logger = logging.getLogger(__name__)
@@ -17,6 +18,8 @@ TIMEOUT = timedelta(seconds=5)
 PlayerCommands = {
     'play': 'without argument start player',
     'play <tracks>': 'play dir,files or urls',
+    'play_choice <collection>': 'play a collection',
+    'choice': 'show available collections',
     'add': 'add files to end of playlist',
     'status': 'show players and their status',                   
     'info': 'show player info',                                
@@ -83,8 +86,8 @@ class LMServer(Server):
 class LMPlayer():
     def __init__(self, player, verbose=False):
         self.player = player
-        print(player)
         self.server = player._server
+        self.sara = Saraswati()
         self.verbose = verbose
         self.PATH_ON_HOST = "/data/music/music_data"
         self.PATH_IN_DOCKER = "/music"
@@ -161,6 +164,21 @@ class LMPlayer():
                 self.player.play_uri(track_list[0])
         else:
             self.player.play()
+
+    def play_choice(self, tracks):
+        choice = tracks[0]
+        if choice in URL.keys():
+            print("found track")
+            url = self.sara.get_url(choice)
+            print(url)
+            self.play([url])
+        else:
+            self.choice()
+            
+    def choice(self, tracks):
+        choices = "\n".join([f"- {key}" for key in URL.keys()])
+        print(choices)
+    
 
     def add(self, tracks):
         track_list = self.build_tracks(tracks)
