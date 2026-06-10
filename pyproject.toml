@@ -45,6 +45,7 @@ where = ["src"]
 
 [project.scripts]
 lmscommander = "lyrionRemote.cli:main"
+gpiocontroller = "lyrionRemote.gpiocontrol:main"
 
 [tool.coverage.run]
 source_pkgs = ["lyrionRemote", "tests"]

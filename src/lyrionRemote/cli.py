@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- mode: python; coding: utf-8 -*-
 import logging
-import tomllib
-import argparse, textwrap
-import os
+import argparse
 import sys
-from lyrionRemote.lmscommander import LMServer,LMPlayer,PlayerCommands
+from lyrionRemote.config import load_config
+from lyrionRemote.lmscommander import LMServer, LMPlayer, PlayerCommands
 from pathlib import Path
 from argparse import ArgumentParser
+
 logger = logging.getLogger(__name__)
-debug = True
+
 
 def main():
     LOGLEVEL = {
@@ -18,16 +18,7 @@ def main():
         2: logging.DEBUG
     }
     cmdhelpstr = "\n".join([f"{key}: {PlayerCommands[key]}" for key in PlayerCommands.keys()])
-    lyrion_remote_config = Path(os.getenv("LYRION_REMOTE_CONFIG", "/config/lyrion-remote/config.toml"))
-    if not lyrion_remote_config.is_file():
-        lyrion_remote_config = Path.home() / ".config" / "lyrion-remote" / "config.toml"
-    try:
-        with open(lyrion_remote_config, mode="rb") as fp:
-            settings = tomllib.load(fp)
-    except FileNotFoundError:
-        print(f"Error: Configuration file not found at '{lyrion_remote_config}'")
-        print("Please ensure the file exists or set the LYRION_REMOTE_CONFIG environment variable.")
-        sys.exit(1)
+    settings = load_config()
 
     server_id = settings.get('general', {}).get('server')
     player_id = settings.get('general', {}).get('player')

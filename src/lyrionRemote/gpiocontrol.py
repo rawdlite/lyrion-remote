@@ -1,62 +1,97 @@
 #!/usr/bin/env python3
+"""GPIO controller for lyrion-remote hardware interface."""
 import threading
-import time
-import os
-import tomllib
-import subprocess
 import logging
-from time import sleep
-from pathlib import Path
-from gpiozero import Button, PWMLED, Device,ButtonBoard
-from gpiozero.pins.pigpio import PiGPIOFactory
-from pigpio_encoder.rotary import Rotary
+import sys
 from signal import pause
-from luma.core.interface.serial import i2c
-from luma.core.render import canvas
-from luma.oled.device import sh1106, ssd1306
-from PIL import ImageFont, ImageDraw, Image
-from urls.LMSURL import URL, Saraswati
-from lyrionRemote.lmscommander import LMServer,LMPlayer,PlayerCommands
+from gpiozero import Device
+from gpiozero.pins.pigpio import PiGPIOFactory
+from lyrionRemote.config import load_config
+from lyrionRemote.lmscommander import LMServer, LMPlayer
+from lyrionRemote.display_manager import Display
+from lyrionRemote.rotary_encoder_manager import RotaryEncoderManager
+from lyrionRemote.rfid_manager import RFIDManager
+from lyrionRemote.button_manager import ButtonManager
 
+logger = logging.getLogger(__name__)
+Device.pin_factory = PiGPIOFactory()
+
+
+class GpioControler:
+    def __init__(self):
+        """Initialize GPIO controller and all hardware interfaces."""
+        settings = load_config()
+        
+        # Setup logging
+        debug = str(settings.get('general', {}).get('debug', '')).lower() in ('1', 'true', 'yes', 'on')
+        loglevel = logging.DEBUG if debug else logging.INFO
+        logging.basicConfig(filename='/var/log/gpio-process.log',
+                            format='%(asctime)s %(levelname)s:%(message)s',
+                            level=loglevel)
+        self.logger = logger
+        self.logger.info('Initialization started')
+        
+        # Initialize display
+        self.display = Display(config=settings)
+        self.display.green.pulse()
+        
+        # Connect to LMS server
+        self.server = LMServer(settings.get('general', {}).get('server'))
+        self.server.update()
+        self.player = LMPlayer(self.server.get_player(settings['general']['player']), verbose=True)
+        
+        # Setup rotary encoder with config
+        self.rotary_encoder = RotaryEncoderManager(display=self.display, player=self.player, config=settings)
+        
+        # Initialize RFID reader
+        status_led = self.display.green
+        self.rfid_reader = RFIDManager(led_reference=status_led)
+        
+        # Initialize buttons
+        self.button_board = ButtonManager(display=self.display, player=self.player, config=settings)
+        
+        self.display.green.off()
+    
+    def run(self):
+        """Start all hardware event handlers and enter main event loop."""
+        self.logger.info('Entering main loop')
+        
+        # Start the RFID reader in a separate thread
+        rfid_thread = threading.Thread(target=self.rfid_reader.run, daemon=True)
+        rfid_thread.start()
+        self.logger.debug('RFID reader thread started')
+        
+        self.button_board.bb.when_pressed = self.button_board.button_action
+        
+        self.rotary_encoder.rotary.setup_rotary(min=-1,
+                                                 max=len(self.rotary_encoder.choices),
+                                                 scale=1,
+                                                 up_callback=self.rotary_encoder.up_callback,
+                                                 down_callback=self.rotary_encoder.down_callback)
+        
+        self.rotary_encoder.rotary.setup_switch(debounce=200,
+                                                 long_press=True,
+                                                 sw_short_callback=self.rotary_encoder.sw_short,
+                                                 sw_long_callback=self.rotary_encoder.sw_long)
+        
+        pause()
 
 def main():
-    with open(os.path.join(Path.home(),".config","lyrion-remote","config.toml"), mode="rb") as fp:
-        settings = tomllib.load(fp)
-    logelevel = logging.INFO
-    debug = settings.get('general',{}).get('debug')
-    if debug:
-        loglevel = logging.DEBUG
+    """Start the GPIO controller daemon.
     
-    logging.basicConfig(filename='/var/log/gpio-process.log',
-                        format='%(asctime)s %(levelname)s:%(message)s',
-                        level=loglevel)
-    logger.info('started')
-    logger.debug(f"path: {os.environ['PATH']}")
-    dsp = Display(config=settings)
-    dsp.green.pulse()
-    server = LMServer(settings.get('general',{}).get('server'))                       
-    server.update()                                             
-    player = LMPlayer(server.get_player(settings['general']['player']), verbose=True)
-    pg = ProcessGPIO(display=dsp,player=player,config=settings)
-    rt = RotaryEncoder(display=dsp,player=player,config=settings)
-    dsp.green.off()
-    pg.bb.when_pressed = pg.button_action
-#
-#sw1 = Button(5, pull_up=False
-    rt.rotary.setup_rotary(min=-1,
-                           max=len(rt.choices),
-                           scale=1,
-                       # debounce=2,
-                       # # rotary_callback=rotary_callback,          
-                           up_callback=rt.up_callback,
-                           down_callback=rt.down_callback)           
-                                                                          
-    rt.rotary.setup_switch(debounce=200,
-                           long_press=True,
-                           sw_short_callback=rt.sw_short,
-                           sw_long_callback=rt.sw_long)
-    pause()
-
+    Intended to run as a systemd service or supervisor process,
+    running indefinitely to handle hardware events.
+    """
+    try:
+        gc = GpioControler()
+        gc.logger.info('Initialization complete, entering main loop')
+        gc.display.draw_text('Ready')
+        gc.run()
+    except KeyboardInterrupt:
+        logger.info('Shutdown signal received')
+    except Exception as exc:
+        logger.exception('Fatal error in GPIO controller: %s', exc)
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
