@@ -170,7 +170,7 @@ class LMPlayer():
 
     def play_choice(self, tracks):
         choice = tracks[0]
-        if choice in URL.keys():
+        if choice in URL:
             url = self.sara.get_url(choice)
             if isinstance(url, list):
                 self.player.query(*url)

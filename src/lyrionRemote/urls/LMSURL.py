@@ -129,7 +129,56 @@ def _load_urls():
     return urls
 
 
-URL = _load_urls()
+
+
+class CaseInsensitiveDict:
+    """Lightweight mapping that provides case-insensitive lookups
+    while preserving original key casing for iteration and display.
+    """
+    def __init__(self, mapping=None):
+        self._data = {}
+        self._index = {}
+        if mapping:
+            for k, v in mapping.items():
+                self._data[k] = v
+                self._index[k.lower()] = k
+
+    def __contains__(self, key):
+        if key is None:
+            return False
+        return key in self._data or key.lower() in self._index
+
+    def __getitem__(self, key):
+        if key in self._data:
+            return self._data[key]
+        orig = self._index.get(key.lower())
+        if orig is None:
+            raise KeyError(key)
+        return self._data[orig]
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def keys(self):
+        return self._data.keys()
+
+    def items(self):
+        return self._data.items()
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __repr__(self):
+        return f"CaseInsensitiveDict({self._data!r})"
+
+
+URL = CaseInsensitiveDict(_load_urls())
 
 
 class Saraswati:
